@@ -1,0 +1,6 @@
+# ROOT map file generated automatically by genmap on Sat Nov 12 11:08:01 2016
+
+Library.__pf__@@HitTaggerTool: libCCProtonPi0Lib.so
+Library.__pf__@@HTtool: libCCProtonPi0Lib.so
+Library.__pf__@@HTBlob: libCCProtonPi0Lib.so
+Library.__pf__@@CCProtonPi0: libCCProtonPi0Lib.so
