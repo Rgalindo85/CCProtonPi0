@@ -418,6 +418,10 @@ StatusCode CCProtonPi0::initialize()
     declareIntEventBranch("N_Primary_Hadrons",              -1);
     declareDoubleEventBranch("hadron_visible_energy",       -9.9);
 
+    // GetPionProngs
+    declareDoubleEventBranch("prongs_pionScore",   -9.9);
+    delcareDoubleEventBranch("prongs_protonScore", -9.9);
+
     // General Reco
     declareDoubleEventBranch( "time",         -1.0 );
     declareDoubleEventBranch( "reco_eventID", -1.0 );
@@ -1861,7 +1865,10 @@ StatusCode CCProtonPi0::getNearestPlane(double z, int & module_return, int & pla
 bool CCProtonPi0::createTrackedParticles(Minerva::PhysicsEvent *event) const
 {
   ProngVect prongs = event->primaryProngs();
+  ProngVect HadronProngs;
   bool makeParticles = false;
+
+  double Hadron_Visible_Energy = 0.0;
 
   // Check if the prongs are odMatch
   Minerva::EventMgr* mgr = getEventMgr(prongs[0]);
@@ -1899,24 +1906,34 @@ bool CCProtonPi0::createTrackedParticles(Minerva::PhysicsEvent *event) const
       toolsToUse.push_back( std::make_pair("dEdXTool","dEdXTool"));
     }
 
+    // Skip the Muon Prong and add the number of prongs candidates and the hadron visible energy in the event
+    if ( !prongs[p]->filtertaglist()->filterTagExist("PrimaryMuon") ){
+    	HadronProngs.push_back(prongs[p]);
+    	Hadron_Visible_Energy += prongs[p]->minervaVisibleEnergySum();
+    	prongs[p]->filtertaglist()->setOrAddFilterTag("PrimaryHadron", true);
+    }
+
     // Make particles
     Minerva::Prong* prong = prongs[p];
     bool isParticleCreated = m_particleMaker->makeParticles(prong, hypotheses, toolsToUse);
 
     if ( isParticleCreated ){
-      debug() << "The prong of bit-field = " 
-	      << prongs[p]->typeBitsToString() << " has " << prong->particles().size() << " Number of particles attached." << endmsg;
-      makeParticles = true;
+    	debug() << "The prong of bit-field = "
+    			<< prongs[p]->typeBitsToString() << " has " << prong->particles().size() << " Number of particles attached." << endmsg;
+    	makeParticles = true;
 
       if (prong->particles().size() == 2){
-	Gaudi::LorentzVector P4_0 = prong->particles()[0]->momentumVec();
-	Gaudi::LorentzVector P4_1 = prong->particles()[0]->momentumVec();
+    	  Gaudi::LorentzVector P4_0 = prong->particles()[0]->momentumVec();
+    	  Gaudi::LorentzVector P4_1 = prong->particles()[0]->momentumVec();
       }
     } else{
-      debug() << "Did not make particles for the prong type = " << prongs[p]->typeBitsToString() << endmsg;
+		debug() << "Did not make particles for the prong type = " << prongs[p]->typeBitsToString() << endmsg;
     }
     hypotheses.clear();
   }
+
+  event->setIntData("N_Primary_Hadrons", HadronProngs.size());
+  event->setDoubleData("hadron_visible_energy", Hadron_Visible_Energy);
 
   return makeParticles;
 }
@@ -2025,7 +2042,7 @@ bool CCProtonPi0::getPionProngs(Minerva::PhysicsEvent *event) const
 {
   debug() << " Entering to getPionProngs " << endmsg;
 
-        ProngVect Pion_hadron_prongs;
+    ProngVect Pion_hadron_prongs;
 	ProngVect prongs = event->primaryProngs();
 
 	//debug() << "    The Events has " << prongs.size << " Primary Prongs" << endmsg;
@@ -2046,6 +2063,7 @@ bool CCProtonPi0::getPionProngs(Minerva::PhysicsEvent *event) const
 	  }
 	  
 	  if (isPrimaryHadron){
+		debug() << "There is a prong labeled as a PrimaryHadron" << endmsg;
 	    Pion_hadron_prongs.push_back(*itProng);
 	  }
 	}// end of the loop over primary Prongs
@@ -2065,6 +2083,9 @@ bool CCProtonPi0::getPionProngs(Minerva::PhysicsEvent *event) const
 	  getBestParticle(hadronProng, pionPart,   Minerva::Particle::Pion);
 	  getBestParticle(hadronProng, protonPart, Minerva::Particle::Proton);
 	  
+	  event->setDoubleData("prongs_pionScore",   pionPart->score() );
+	  event->setDoubleData("prongs_protonScore", protonPart->score() );
+
 	  //if (pionPart->hasDoubleData("score1") && pionPart->getDoubleData("score1") > 0.4 ){  //minimum score for a pion is 0,4
 	  if (pionPart){
 	    debug() << " A real pion candidate is found in getPionProngs" << endmsg; 
