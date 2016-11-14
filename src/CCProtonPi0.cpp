@@ -420,7 +420,7 @@ StatusCode CCProtonPi0::initialize()
 
     // GetPionProngs
     declareDoubleEventBranch("prongs_pionScore",   -9.9);
-    delcareDoubleEventBranch("prongs_protonScore", -9.9);
+    declareDoubleEventBranch("prongs_protonScore", -9.9);
 
     // General Reco
     declareDoubleEventBranch( "time",         -1.0 );
@@ -1907,7 +1907,7 @@ bool CCProtonPi0::createTrackedParticles(Minerva::PhysicsEvent *event) const
     }
 
     // Skip the Muon Prong and add the number of prongs candidates and the hadron visible energy in the event
-    if ( !prongs[p]->filtertaglist()->filterTagExist("PrimaryMuon") ){
+    if ( !prongs[p]->filtertaglist()->filterTagExists("PrimaryMuon") ){
     	HadronProngs.push_back(prongs[p]);
     	Hadron_Visible_Energy += prongs[p]->minervaVisibleEnergySum();
     	prongs[p]->filtertaglist()->setOrAddFilterTag("PrimaryHadron", true);
