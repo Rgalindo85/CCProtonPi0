@@ -1132,8 +1132,8 @@ StatusCode CCProtonPi0::reconstructEvent( Minerva::PhysicsEvent *event, Minerva:
     	if (!makeParticles){
             debug() << "Creation of Particles FAILED" << endmsg;
             event->setIntData("Cut_Particle_None", 1);
-            //if (m_keepAfter_proton_cuts) return interpretFailEvent(event);
-            //else return StatusCode::SUCCESS;
+            if (m_keepAfter_pion_cuts) return interpretFailEvent(event);
+            else return StatusCode::SUCCESS;
     	}
 
     	bool foundPion = getPionProngs(event);
@@ -2113,10 +2113,12 @@ void CCProtonPi0::getBestParticle(SmartRef<Minerva::Prong> prong, SmartRef<Miner
 	//get prong's best dEdX particle hypothesis
 	double largest_score = -1.0;
 
-	debug() << "  Prong has " << partHypVec.size() << " particle hypotheses" << endmsg;
+	debug() << "  Prong has " << partHypVec.size() << " particle hypotheses " << endmsg;
 	for( itPart = partHypVec.begin(); itPart != partHypVec.end(); ++itPart ) {
 	  double score1 = -9.0;
 	  
+	  if ( (*itPart)->idcode() == Unknow)
+	  debug() << " The socore is " << itPart->score()
 	  if ( (*itPart)->isMultiMass() ) continue;
 	  if ( (*itPart)->hasDoubleData("score1") ) score1  = (*itPart)->getDoubleData("score1");
 
