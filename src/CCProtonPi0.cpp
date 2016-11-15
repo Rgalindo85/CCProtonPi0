@@ -2117,8 +2117,7 @@ void CCProtonPi0::getBestParticle(SmartRef<Minerva::Prong> prong, SmartRef<Miner
 	for( itPart = partHypVec.begin(); itPart != partHypVec.end(); ++itPart ) {
 	  double score1 = -9.0;
 	  
-	  if ( (*itPart)->idcode() == Unknow)
-	  debug() << " The socore is " << itPart->score()
+	  debug() << " The score is " << (*itPart)->score() << endmsg;
 	  if ( (*itPart)->isMultiMass() ) continue;
 	  if ( (*itPart)->hasDoubleData("score1") ) score1  = (*itPart)->getDoubleData("score1");
 
