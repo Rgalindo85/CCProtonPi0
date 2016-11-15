@@ -1862,6 +1862,7 @@ StatusCode CCProtonPi0::getNearestPlane(double z, int & module_return, int & pla
 //==============================================================================
 // Created particles for negative bit Minos prongs
 //==============================================================================
+/*
 bool CCProtonPi0::createTrackedParticles(Minerva::PhysicsEvent *event) const
 {
   ProngVect prongs = event->primaryProngs();
@@ -1937,7 +1938,8 @@ bool CCProtonPi0::createTrackedParticles(Minerva::PhysicsEvent *event) const
 
   return makeParticles;
 }
-/*
+*/
+
 bool CCProtonPi0::createTrackedParticles(Minerva::PhysicsEvent *event) const
 {
   // Create a vector fro particle hypotheses, pion and proton
@@ -1955,6 +1957,7 @@ bool CCProtonPi0::createTrackedParticles(Minerva::PhysicsEvent *event) const
   for (ProngVect::iterator itProngs = primaryProngs.begin(); itProngs != primaryProngs.end(); ++itProngs ){
     
     if ( (*itProngs) != m_MuonProng){
+
       hadron_prongs.push_back(*itProngs);
       hadron_visible_energy += (*itProngs)->minervaVisibleEnergySum();
       (*itProngs)->filtertaglist()->setOrAddFilterTag("PrimaryHadron", true);
@@ -1963,10 +1966,12 @@ bool CCProtonPi0::createTrackedParticles(Minerva::PhysicsEvent *event) const
       ParticleVect hadron_particles;
       m_particleTool->makeParticles(*itProngs, hadron_particles, particleHypotheses);
       for (ParticleVect::iterator itPart = hadron_particles.begin(); itPart != hadron_particles.end(); ++itPart){
-	MinervaHistoTool::addParticle(*itProngs, *itPart);
+    	  MinervaHistoTool::addParticle(*itProngs, *itPart);
+    	  debug() << "The prong has the particle " << (*itPart)->idcode() << " and score = " << (*itPart)->score() << endmsg;
       }
+
       if (m_particleTool){
-	makeParticles = true;
+    	  makeParticles = true;
       }
 
       // make an endPoint vertex blob for the hadron prong
@@ -1974,21 +1979,21 @@ bool CCProtonPi0::createTrackedParticles(Minerva::PhysicsEvent *event) const
       SmartRef<Minerva::Vertex> endpoint_vtx;
       m_objectAssociator->getVertex_fromTrackBack( endpoint_vtx, (*itProngs)->minervaTracks().back() );
       if ( !endpoint_vtx){
-	debug() << "Could not find a back vertex for this prong!!" << endmsg;
-	continue;
+    	  debug() << "Could not find a back vertex for this prong!!" << endmsg;
+    	  continue;
       }
 
       IDClusterVect StopPointClusters = event->select<Minerva::IDCluster>("Unused", "!XTalkCandidate");
       if ( !StopPointClusters.empty() ){
-	Minerva::IDBlob* StopPointBlob = new Minerva::IDBlob;
+    	  Minerva::IDBlob* StopPointBlob = new Minerva::IDBlob;
 
-	debug() << "Create IDBlobs" << endmsg;
-	m_stopPointBlobTool->createIDBlobs( StopPointClusters, StopPointBlob, endpoint_vtx);
-	addObject(event, StopPointBlob);
-	endpoint_vtx->addIDBlob(StopPointBlob);
-	(*itProngs)->add(StopPointBlob);
-	(*itProngs)->setDoubleData("endPointE", m_caloUtils->applyCalConsts( StopPointBlob, "Default") );
-      } 
+    	  debug() << "Create IDBlobs" << endmsg;
+    	  m_stopPointBlobTool->createIDBlobs( StopPointClusters, StopPointBlob, endpoint_vtx);
+    	  addObject(event, StopPointBlob);
+    	  endpoint_vtx->addIDBlob(StopPointBlob);
+    	  (*itProngs)->add(StopPointBlob);
+    	  (*itProngs)->setDoubleData("endPointE", m_caloUtils->applyCalConsts( StopPointBlob, "Default") );
+      }
 
       // Search for Michels in the stop point at the end of the track
       debug() << "Search for Michel electrons" << endmsg;
@@ -1999,8 +2004,8 @@ bool CCProtonPi0::createTrackedParticles(Minerva::PhysicsEvent *event) const
 
       muonIsPlausible( smart_michelProng, michel_mc_frac );
       if ( foundMichel ){
-	debug() << "A Michel is found" << endmsg;
-	(*itProngs)->setIntData("hasEndPointMichel", 1);
+    	  debug() << "A Michel is found" << endmsg;
+    	  (*itProngs)->setIntData("hasEndPointMichel", 1);
       }
 
       //Search for a Secondary Michel in the prong, if there are more than 1, break
@@ -2022,7 +2027,6 @@ bool CCProtonPi0::createTrackedParticles(Minerva::PhysicsEvent *event) const
       }
       */
 
-/*
     } // end of the prong != muonPong
   } // end of the loop over primary prongs
 
@@ -2033,7 +2037,7 @@ bool CCProtonPi0::createTrackedParticles(Minerva::PhysicsEvent *event) const
  
   return makeParticles;
 }
-*/
+
 
 //=======================================================================================================
 // Get Pion Prong
@@ -2124,7 +2128,7 @@ void CCProtonPi0::getBestParticle(SmartRef<Minerva::Prong> prong, SmartRef<Miner
 	  debug() << "    score1 "<< score1 << " part " << (*itPart)->idcode() << endmsg;
 
 	  if ( score1 > largest_score && (*itPart)->idcode() == partType ) {
-	    debug()<<"    Updating particle"<<endmsg;
+	    debug() <<"    Updating particle"<<endmsg;
 	    particle = *itPart;
 	    largest_score = score1;
 	    //hasBestParticle = true;
