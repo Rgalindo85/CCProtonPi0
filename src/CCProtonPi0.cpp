@@ -1862,7 +1862,7 @@ StatusCode CCProtonPi0::getNearestPlane(double z, int & module_return, int & pla
 //==============================================================================
 // Created particles for negative bit Minos prongs
 //==============================================================================
-/*
+
 bool CCProtonPi0::createTrackedParticles(Minerva::PhysicsEvent *event) const
 {
   ProngVect prongs = event->primaryProngs();
@@ -1890,12 +1890,16 @@ bool CCProtonPi0::createTrackedParticles(Minerva::PhysicsEvent *event) const
     }
 
     // Skip prongs with particles
+    // Not sure why Ozgur is doing this, maybe is trying to avoid overcounting, but I'm going to remove this part is confusing
+    /*
     debug() << "The prong has n particles = " << prongs[p]->particles().size() << endmsg;
     if (!prongs[p]->particles().empty() ){
       debug() << "Skipping Prong: Prong has attached particles!" << endmsg;
       continue;
     }
-	  
+    */
+
+
     // Select the particle hypotheses candidates and particle tools
     std::vector<Minerva::Particle::ID> hypotheses;
     IParticleMakerTool::NameAliasListType toolsToUse;
@@ -1911,22 +1915,79 @@ bool CCProtonPi0::createTrackedParticles(Minerva::PhysicsEvent *event) const
     if ( !prongs[p]->filtertaglist()->filterTagExists("PrimaryMuon") ){
     	HadronProngs.push_back(prongs[p]);
     	Hadron_Visible_Energy += prongs[p]->minervaVisibleEnergySum();
-    	prongs[p]->filtertaglist()->setOrAddFilterTag("PrimaryHadron", true);
+    	//prongs[p]->filtertaglist()->setOrAddFilterTag("PrimaryHadron", true);
+    }
+
+    // Check if the prong has associated a track, otherwise it could return an Unknown particle
+    Minerva::TrackVect tracks = prongs[p]->minervaTracks();
+    debug() << " The Prong has " << tracks.size() << " tracks" << endmsg;
+    if ( tracks.empty() ){
+    	debug() << " The Prong hasn't a track, skipping the prong" << endmsg;
+    	continue;
+    }
+
+    // Check if the prong is not a muon (MINOS track or stub)
+    if ( prongs[p]->MinosTrack() || prongs[p]->MinosStub() ){
+    	debug() << " This is a MINOS matched prong, skipping it" << endmsg;
+    	continue;
+    }
+
+    // Check if the prong is forked
+    if ( prongs[p]->Forked() ){
+      debug() << "  This prong is forked, skipping it" << endmsg;
+      continue;
+    }
+
+    // Count nodes
+    int nodes = 0;
+    Minerva::TrackVect::iterator it_tracks;
+    for (it_tracks = tracks.begin(); it_tracks != tracks.end(); ++it_tracks){
+      nodes += (*it_tracks)->nNodes();
+    }
+    
+    if ( nodes < 3){
+      debug() << " This prong has less than 3 nodes, skipping it" << endmsg;
+      continue;
+    }
+    
+    // Check for the direction of the prongs.
+    Minerva::Track::Direction direction = prongs[p]->minervaTracks().back()->direction();
+    bool isODMatchAtTrackEnd = false;
+    if ( (direction == Minerva::Track::Forward && prongs[p]->OdMatchDS() ) || (direction == Minerva::Track::Backward && prongs[p]->OdMatchUS() ) ){
+    	isODMatchAtTrackEnd = true;
+    }
+    
+    if (prongs[p]->ExitID() && !isODMatchAtTrackEnd){
+    	debug() << "The prong is exiting the ID but don't match with the OD, skipping it" << endmsg;
+    	continue;
+    }
+    
+    if ( isODMatchAtTrackEnd ){
+    	debug() << "The prong is matching the OD at the end of the track, skipping it" << endmsg;
+        continue;
     }
 
     // Make particles
+    debug() << "Making particles" << endmsg;
+    prongs[p]->filtertaglist()->setOrAddFilterTag("PrimaryHadron", true);
     Minerva::Prong* prong = prongs[p];
     bool isParticleCreated = m_particleMaker->makeParticles(prong, hypotheses, toolsToUse);
 
     if ( isParticleCreated ){
-    	debug() << "The prong of bit-field = "
-    			<< prongs[p]->typeBitsToString() << " has " << prong->particles().size() << " Number of particles attached." << endmsg;
+    	debug() << "The prong of bit-field = " << prongs[p]->typeBitsToString() << " has " << prong->particles().size() << " Number of particles attached." << endmsg;
     	makeParticles = true;
 
-      if (prong->particles().size() == 2){
-    	  Gaudi::LorentzVector P4_0 = prong->particles()[0]->momentumVec();
-    	  Gaudi::LorentzVector P4_1 = prong->particles()[0]->momentumVec();
-      }
+    	Minerva::ParticleVect partHypVec = prong->particles();
+    	Minerva::ParticleVect::iterator itPart;
+    	for ( itPart = partHypVec.begin(); itPart != partHypVec.end(); itPart++){
+    		debug() << " The prong has the particle " << (*itPart)->idcode() << " with a score = " << (*itPart)->score() << endmsg;
+    	}
+
+    	if (prong->particles().size() == 2){
+		Gaudi::LorentzVector P4_0 = prong->particles()[0]->momentumVec();
+    		Gaudi::LorentzVector P4_1 = prong->particles()[0]->momentumVec();
+
+    	}
     } else{
 		debug() << "Did not make particles for the prong type = " << prongs[p]->typeBitsToString() << endmsg;
     }
@@ -1938,8 +1999,8 @@ bool CCProtonPi0::createTrackedParticles(Minerva::PhysicsEvent *event) const
 
   return makeParticles;
 }
-*/
 
+/*
 bool CCProtonPi0::createTrackedParticles(Minerva::PhysicsEvent *event) const
 {
   // Create a vector fro particle hypotheses, pion and proton
@@ -2026,7 +2087,7 @@ bool CCProtonPi0::createTrackedParticles(Minerva::PhysicsEvent *event) const
 	}
       }
       */
-
+/*
     } // end of the prong != muonPong
   } // end of the loop over primary prongs
 
@@ -2037,7 +2098,7 @@ bool CCProtonPi0::createTrackedParticles(Minerva::PhysicsEvent *event) const
  
   return makeParticles;
 }
-
+*/
 
 //=======================================================================================================
 // Get Pion Prong
@@ -2068,7 +2129,10 @@ bool CCProtonPi0::getPionProngs(Minerva::PhysicsEvent *event) const
 	  
 	  if (isPrimaryHadron){
 		debug() << "There is a prong labeled as a PrimaryHadron" << endmsg;
-	    Pion_hadron_prongs.push_back(*itProng);
+                Pion_hadron_prongs.push_back(*itProng);
+	  }else{
+	  	debug() << "It is not a PrimaryHadron, skipping it!" << endmsg;
+	    continue;
 	  }
 	}// end of the loop over primary Prongs
 
@@ -2087,15 +2151,26 @@ bool CCProtonPi0::getPionProngs(Minerva::PhysicsEvent *event) const
 	  getBestParticle(hadronProng, pionPart,   Minerva::Particle::Pion);
 	  getBestParticle(hadronProng, protonPart, Minerva::Particle::Proton);
 	  
-	  event->setDoubleData("prongs_pionScore",   pionPart->score() );
-	  event->setDoubleData("prongs_protonScore", protonPart->score() );
+	  //debug() << " The prong has a pion score   = " << (pionPart)->score() << endmsg;
+	  //debug() << " The prong has a proton score = " << (protonPart)->score() << endmsg;
+	  //event->setDoubleData("prongs_pionScore",   (pionPart)->score() );
+	  //event->setDoubleData("prongs_protonScore", (protonPart)->score() );
 
 	  //if (pionPart->hasDoubleData("score1") && pionPart->getDoubleData("score1") > 0.4 ){  //minimum score for a pion is 0,4
 	  if (pionPart){
 	    debug() << " A real pion candidate is found in getPionProngs" << endmsg; 
 	    isPionExist = true;
+	    debug() << " The prong has a pion score   = " << (pionPart)->score() << endmsg;
+	    event->setDoubleData("prongs_pionScore",   (pionPart)->score() );
             m_PionProngs.push_back( hadronProng );
             m_PionParticles.push_back( pionPart );
+	  }
+
+	  if (protonPart){
+	    debug() << " A real proton candidate is found in getPionProngs" << endmsg; 
+	    //isPionExist = true;
+	    debug() << " The prong has a proton score   = " << (protonPart)->score() << endmsg;
+	    event->setDoubleData("prongs_protonScore",   (protonPart)->score() );
 	  }
 
 	}// end of the loop over primary hadron prongs
@@ -2115,7 +2190,7 @@ void CCProtonPi0::getBestParticle(SmartRef<Minerva::Prong> prong, SmartRef<Miner
 	SmartRefVector<Minerva::Particle>::iterator itPart;
 
 	//get prong's best dEdX particle hypothesis
-	double largest_score = -1.0;
+	//double largest_score = -1.0;
 
 	debug() << "  Prong has " << partHypVec.size() << " particle hypotheses " << endmsg;
 	for( itPart = partHypVec.begin(); itPart != partHypVec.end(); ++itPart ) {
@@ -2123,14 +2198,15 @@ void CCProtonPi0::getBestParticle(SmartRef<Minerva::Prong> prong, SmartRef<Miner
 	  
 	  debug() << " The score is " << (*itPart)->score() << endmsg;
 	  if ( (*itPart)->isMultiMass() ) continue;
-	  if ( (*itPart)->hasDoubleData("score1") ) score1  = (*itPart)->getDoubleData("score1");
+	  //if ( (*itPart)->hasDoubleData("score1") ) score1  = (*itPart)->getDoubleData("score1");
 
-	  debug() << "    score1 "<< score1 << " part " << (*itPart)->idcode() << endmsg;
+	  //debug() << "    score1 "<< score1 << " part " << (*itPart)->idcode() << endmsg;
 
-	  if ( score1 > largest_score && (*itPart)->idcode() == partType ) {
+	  double score = (*itPart)->score();
+	  if ( score > 0 && (*itPart)->idcode() == partType ) {
 	    debug() <<"    Updating particle"<<endmsg;
 	    particle = *itPart;
-	    largest_score = score1;
+	    //largest_score = score1;
 	    //hasBestParticle = true;
 	  }
 	}
