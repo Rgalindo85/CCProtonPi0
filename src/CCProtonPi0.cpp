@@ -1891,13 +1891,11 @@ bool CCProtonPi0::createTrackedParticles(Minerva::PhysicsEvent *event) const
 
     // Skip prongs with particles
     // Not sure why Ozgur is doing this, maybe is trying to avoid overcounting, but I'm going to remove this part is confusing
-    /*
     debug() << "The prong has n particles = " << prongs[p]->particles().size() << endmsg;
     if (!prongs[p]->particles().empty() ){
       debug() << "Skipping Prong: Prong has attached particles!" << endmsg;
       continue;
     }
-    */
 
 
     // Select the particle hypotheses candidates and particle tools
@@ -2129,7 +2127,7 @@ bool CCProtonPi0::getPionProngs(Minerva::PhysicsEvent *event) const
 	  
 	  if (isPrimaryHadron){
 		debug() << "There is a prong labeled as a PrimaryHadron" << endmsg;
-                Pion_hadron_prongs.push_back(*itProng);
+        Pion_hadron_prongs.push_back(*itProng);
 	  }else{
 	  	debug() << "It is not a PrimaryHadron, skipping it!" << endmsg;
 	    continue;
